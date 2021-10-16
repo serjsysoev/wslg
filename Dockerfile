@@ -162,7 +162,7 @@ COPY debuginfo /work/debuginfo
 RUN chmod +x /work/debuginfo/gen_debuginfo.sh
 
 # Build FreeRDP
-COPY vendor/FreeRDP /work/vendor/FreeRDP
+RUN git clone https://github.com/microsoft/FreeRDP-mirror /work/vendor/FreeRDP -b working
 WORKDIR /work/vendor/FreeRDP
 RUN cmake -G Ninja \
         -B build \
@@ -202,7 +202,7 @@ RUN if [ -z "$SYSTEMDISTRO_DEBUG_BUILD" ] ; then \
     fi
 
 # Build Weston
-COPY vendor/weston /work/vendor/weston
+RUN git clone https://github.com/microsoft/weston-mirror /work/vendor/weston -b working
 WORKDIR /work/vendor/weston
 RUN /usr/bin/meson --prefix=${PREFIX} build \
         --buildtype=${BUILDTYPE} \
@@ -237,7 +237,7 @@ RUN if [ -z "$SYSTEMDISTRO_DEBUG_BUILD" ] ; then \
     fi
 
 # Build PulseAudio
-COPY vendor/pulseaudio /work/vendor/pulseaudio
+RUN git clone https://github.com/microsoft/PulseAudio-mirror /work/vendor/pulseaudio -b working
 WORKDIR /work/vendor/pulseaudio
 RUN /usr/bin/meson --prefix=${PREFIX} build \
         --buildtype=${BUILDTYPE_NODEBUGSTRIP} \
@@ -249,7 +249,7 @@ RUN /usr/bin/meson --prefix=${PREFIX} build \
     echo 'pulseaudio:' `git --git-dir=/work/vendor/pulseaudio/.git rev-parse --verify HEAD` >> /work/versions.txt
 
 # Build mesa with the minimal options we need.
-COPY vendor/mesa /work/vendor/mesa
+RUN git clone https://github.com/mesa3d/mesa /work/vendor/mesa -b 21.0
 WORKDIR /work/vendor/mesa
 RUN /usr/bin/meson --prefix=${PREFIX} build \
         --buildtype=${BUILDTYPE_NODEBUGSTRIP} \

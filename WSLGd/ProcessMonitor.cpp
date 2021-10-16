@@ -27,30 +27,11 @@ int wslgd::ProcessMonitor::LaunchProcess(std::vector<std::string>&& argv, std::v
 
         arguments.push_back(nullptr);
 
-        // If any capabilities were specified, set the keepcaps flag so they are not lost across setuid.
-        if (!capabilities.empty()) {
-            THROW_LAST_ERROR_IF(prctl(PR_SET_KEEPCAPS, 1) < 0);
-        }
-
         // Set user settings.
         THROW_LAST_ERROR_IF(setgid(m_user->pw_gid) < 0);
         THROW_LAST_ERROR_IF(initgroups(m_user->pw_name, m_user->pw_gid) < 0);
         THROW_LAST_ERROR_IF(setuid(m_user->pw_uid) < 0);
         THROW_LAST_ERROR_IF(chdir(m_user->pw_dir) < 0);
-
-        // Apply additional capabilities to the process.
-        if (!capabilities.empty()) {
-            cap_t caps{};
-            THROW_LAST_ERROR_IF((caps = cap_get_proc()) == NULL);
-            auto freeCapabilities = wil::scope_exit([&caps]() { cap_free(caps); });
-            THROW_LAST_ERROR_IF(cap_set_flag(caps, CAP_PERMITTED, capabilities.size(), capabilities.data(), CAP_SET) < 0);
-            THROW_LAST_ERROR_IF(cap_set_flag(caps, CAP_EFFECTIVE, capabilities.size(), capabilities.data(), CAP_SET) < 0);
-            THROW_LAST_ERROR_IF(cap_set_flag(caps, CAP_INHERITABLE, capabilities.size(), capabilities.data(), CAP_SET) < 0);
-            THROW_LAST_ERROR_IF(cap_set_proc(caps) < 0);
-            for (auto &cap : capabilities) {
-                THROW_LAST_ERROR_IF(cap_set_ambient(cap, CAP_SET) < 0);
-            }
-        }
 
         // Run the process as the specified user.
         THROW_LAST_ERROR_IF(execvp(arguments[0], const_cast<char *const *>(arguments.data())) < 0);
